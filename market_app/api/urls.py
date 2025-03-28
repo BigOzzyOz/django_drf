@@ -1,6 +1,6 @@
 from django.urls import path
-from market_app.api.views import first_view
+from . import views
 
 urlpatterns = [
-    path("", first_view, name="home"),
+    path("", views.first_view, name="home"),
 ]
