@@ -28,4 +28,4 @@ class Product(models.Model):
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name="products")
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.price})"
