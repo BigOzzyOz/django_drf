@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from market_app.models import Market
+from market_app.models import Market, Seller
 
 
 class MarketSerializer(serializers.Serializer):
@@ -23,4 +23,48 @@ class MarketSerializer(serializers.Serializer):
     def validate_net_worth(self, value):
         if value < 0:
             raise serializers.ValidationError("Net worth cannot be negative.")
+        return value
+
+
+class SellerReadSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    name = serializers.CharField(max_length=255)
+    contact_info = serializers.CharField()
+    markets = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+
+
+class SellerCreateSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=255)
+    contact_info = serializers.CharField()
+    markets = serializers.ListField(child=serializers.IntegerField(), write_only=True)
+
+    def create(self, validated_data):
+        markets_data = validated_data.pop("markets")
+        seller = Seller.objects.create(**validated_data)
+        for market_id in markets_data:
+            try:
+                market = Market.objects.get(id=market_id)
+                seller.markets.add(market)
+            except Market.DoesNotExist:
+                raise serializers.ValidationError(f"Market with id {market_id} does not exist.")
+        return seller
+
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get("name", instance.name)
+        instance.contact_info = validated_data.get("contact_info", instance.contact_info)
+        markets_data = validated_data.get("markets", [])
+        instance.markets.clear()
+        for market_id in markets_data:
+            try:
+                market = Market.objects.get(id=market_id)
+                instance.markets.add(market)
+            except Market.DoesNotExist:
+                raise serializers.ValidationError(f"Market with id {market_id} does not exist.")
+        instance.save()
+        return instance
+
+    def validate_markets(self, value):
+        markets = Market.objects.filter(id__in=value)
+        if len(markets) != len(value):
+            raise serializers.ValidationError("Some markets do not exist.")
         return value
