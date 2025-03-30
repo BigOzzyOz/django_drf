@@ -1,8 +1,14 @@
 from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework.response import Response
-from .serializers import MarketSerializer, SellerReadSerializer, SellerCreateSerializer
-from market_app.models import Market, Seller
+from .serializers import (
+    MarketSerializer,
+    SellerReadSerializer,
+    SellerCreateSerializer,
+    ProductCreateSerializer,
+    ProductReadSerializer,
+)
+from market_app.models import Market, Seller, Product
 
 
 @api_view(["GET", "POST"])
@@ -96,6 +102,56 @@ def seller_detail_view(request, pk):
 
     elif request.method == "PATCH":
         serializer = SellerCreateSerializer(seller, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    else:
+        return Response({"error": "Method not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+@api_view(["GET", "POST"])
+def products_view(request):
+    if request.method == "GET":
+        products = Product.objects.all()
+        serializer = ProductReadSerializer(products, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    elif request.method == "POST":
+        serializer = ProductCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        return Response({"error": "Method not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+@api_view(["GET", "PUT", "DELETE", "PATCH"])
+def product_detail_view(request, pk):
+    try:
+        product = Product.objects.get(pk=pk)
+    except Product.DoesNotExist:
+        return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == "GET":
+        serializer = ProductReadSerializer(product)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    elif request.method == "DELETE":
+        product.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    elif request.method == "PUT":
+        serializer = ProductCreateSerializer(product, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == "PATCH":
+        serializer = ProductCreateSerializer(product, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
