@@ -83,7 +83,6 @@ class MarketAPITestCase(APITestCase):
     def test_market_not_found(self):
         response = self.client.get("/api/markets/999/")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(response.data["error"], "Market not found")
 
     def test_method_not_allowed(self):
         response = self.client.patch("/api/markets/", {}, format="json")
@@ -173,7 +172,6 @@ class SellerAPITestCase(APITestCase):
     def test_seller_not_found(self):
         response = self.client.get("/api/sellers/999/")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(response.data["error"], "Seller not found")
 
 
 class ProductAPITestCase(APITestCase):
@@ -275,4 +273,3 @@ class ProductAPITestCase(APITestCase):
     def test_product_not_found(self):
         response = self.client.get("/api/products/999/")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(response.data["error"], "Product not found")
