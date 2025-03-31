@@ -1,6 +1,6 @@
 from django.test import TestCase
 from market_app.models import Market, Seller
-from market_app.api.serializers import MarketSerializer, SellerCreateSerializer, ProductCreateSerializer
+from market_app.api.serializers import MarketSerializer, SellerSerializer, ProductSerializer
 
 
 class MarketSerializerTestCase(TestCase):
@@ -43,7 +43,7 @@ class MarketSerializerTestCase(TestCase):
         self.assertIn("net_worth", serializer.errors)
 
 
-class SellerCreateSerializerTestCase(TestCase):
+class SellerSerializerTestCase(TestCase):
     def setUp(self):
         self.market = Market.objects.create(
             name="Downtown Market",
@@ -54,9 +54,9 @@ class SellerCreateSerializerTestCase(TestCase):
         self.data = {
             "name": "John Doe",
             "contact_info": "john.doe@example.com, +49 123 456 789",
-            "markets": [self.market.id],
+            "markets_ids": [self.market.id],
         }
-        self.serializer = SellerCreateSerializer(data=self.data)
+        self.serializer = SellerSerializer(data=self.data)
 
     def test_seller_serialization(self):
         self.assertTrue(self.serializer.is_valid())
@@ -69,14 +69,41 @@ class SellerCreateSerializerTestCase(TestCase):
         data = {
             "name": "",
             "contact_info": "invalid@example.com",
-            "markets": [],
+            "markets_ids": [],
         }
-        serializer = SellerCreateSerializer(data=data)
+        serializer = SellerSerializer(data=data)
         self.assertFalse(serializer.is_valid())
         self.assertIn("name", serializer.errors)
 
+    def test_validate_markets_valid(self):
+        data = {
+            "name": "Valid Seller",
+            "contact_info": "valid@example.com",
+            "markets_ids": [self.market.id],
+        }
+        serializer = SellerSerializer(data=data)
+        self.assertTrue(serializer.is_valid())
 
-class ProductCreateSerializerTestCase(TestCase):
+    def test_validate_markets_invalid(self):
+        data = {
+            "name": "Invalid Seller",
+            "contact_info": "invalid@example.com",
+            "markets_ids": [999],
+        }
+        serializer = SellerSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+
+    def test_validate_markets_partial_invalid(self):
+        data = {
+            "name": "Partial Seller",
+            "contact_info": "partial@example.com",
+            "markets_ids": [self.market.id, 999],
+        }
+        serializer = SellerSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+
+
+class ProductSerializerTestCase(TestCase):
     def setUp(self):
         self.market = Market.objects.create(
             name="Downtown Market",
@@ -93,10 +120,10 @@ class ProductCreateSerializerTestCase(TestCase):
             "name": "Organic Apples",
             "description": "Fresh organic apples from local farms.",
             "price": 3.50,
-            "markets": [self.market.id],
-            "seller": self.seller.id,
+            "markets_ids": [self.market.id],
+            "seller_id": self.seller.id,
         }
-        self.serializer = ProductCreateSerializer(data=self.data)
+        self.serializer = ProductSerializer(data=self.data)
 
     def test_product_serialization(self):
         self.assertTrue(self.serializer.is_valid())
@@ -112,10 +139,10 @@ class ProductCreateSerializerTestCase(TestCase):
             "name": "Invalid Product",
             "description": "",
             "price": 10.00,
-            "markets": [self.market.id],
-            "seller": self.seller.id,
+            "markets_id": [self.market.id],
+            "seller_id": self.seller.id,
         }
-        serializer = ProductCreateSerializer(data=data)
+        serializer = ProductSerializer(data=data)
         self.assertFalse(serializer.is_valid())
         self.assertIn("description", serializer.errors)
 
@@ -124,9 +151,9 @@ class ProductCreateSerializerTestCase(TestCase):
             "name": "Invalid Product",
             "description": "Valid description",
             "price": -10.00,
-            "markets": [self.market.id],
-            "seller": self.seller.id,
+            "markets_ids": [self.market.id],
+            "seller_id": self.seller.id,
         }
-        serializer = ProductCreateSerializer(data=data)
+        serializer = ProductSerializer(data=data)
         self.assertFalse(serializer.is_valid())
         self.assertIn("price", serializer.errors)

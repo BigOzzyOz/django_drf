@@ -15,6 +15,12 @@ db.sqlite3
 venv/
 env/
 
+# Covarage
+coverage/
+.coverage
+.coveragerc
+coverage.xml
+
 # IDEs and Editors
 .vscode/
 .idea/
